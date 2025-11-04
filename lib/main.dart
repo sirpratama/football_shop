@@ -11,8 +11,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Football Shop',
       theme: ThemeData(
+        useMaterial3: true,
         // This is the theme of your application.
         //
         // TRY THIS: Try running your application with "flutter run". You'll see
@@ -28,9 +29,87 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorSchemeSeed: Colors.green,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const HomePage(),
+    );
+  }
+}
+
+Color hexToColor(String hex) {
+  hex = hex.replaceFirst('#', '');
+  if (hex.length == 6) hex = 'FF$hex';
+  return Color(int.parse(hex, radix: 16));
+}
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Dashboard')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: hexToColor('#80A1BA'),
+              ),
+              icon: const Icon(Icons.list_alt),
+              label: const Text('All Products'),
+              onPressed: () {
+                // Navigate to ALL product page
+                // Navigator.pushNamed(context, '/all-products');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('You have pressed the All Products button'),
+                  ),
+                );
+                debugPrint('All Products button pressed');
+              },
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: hexToColor('#41A67E'),
+              ),
+              icon: const Icon(Icons.inventory_2),
+              label: const Text('My Products'),
+              onPressed: () {
+                // Navigate to My Products page
+                // Navigator.pushNamed(context, '/my-products');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('You have pressed the My Products button'),
+                  ),
+                );
+                debugPrint('My Products button pressed');
+              },
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: hexToColor('#842A3B'),
+              ),
+              icon: const Icon(Icons.add_circle),
+              label: const Text('Create Product'),
+              onPressed: () {
+                // Navigate to Create Product page
+                // Navigator.pushNamed(context, '/create-product');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('You have pressed the Create Product button'),
+                  ),
+                );
+                debugPrint('Create Product button pressed');
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
