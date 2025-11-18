@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
 import 'package:football_shop/widgets/left_drawer.dart';
 
 class ProductFormPage extends StatefulWidget {
@@ -241,65 +243,90 @@ class _ProductFormPageState extends State<ProductFormPage> {
                   'Save Product',
                   style: TextStyle(fontSize: 16.0),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
                     
-                    // Show dialog with product information
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text('Product Saved Successfully!'),
-                          content: SingleChildScrollView(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildInfoRow('Name', _name),
-                                _buildInfoRow('Price', '\$${_price.toStringAsFixed(2)}'),
-                                _buildInfoRow('Description', _description),
-                                _buildInfoRow('Thumbnail', _thumbnail),
-                                _buildInfoRow('Category', _category),
-                                _buildInfoRow('Featured', _isFeatured ? 'Yes' : 'No'),
-                              ],
+                    final request = context.read<CookieRequest>();
+                    
+                    // Debug: Check if user is logged in
+                    print('Logged in: ${request.loggedIn}');
+                    
+                    // Check if logged in before sending
+                    if (!request.loggedIn) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please login first to create products'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    
+                    try {
+                      // Get user_id (workaround for cookie issues on Flutter Web)
+                      final userId = request.jsonData['user_id'];
+                      
+                      // Send product data to Django
+                      final response = await request.post(
+                        'http://localhost:8000/api/create/',
+                        {
+                          'name': _name,
+                          'price': _price.toString(),
+                          'description': _description,
+                          'thumbnail': _thumbnail,
+                          'category': _category,
+                          'is_featured': _isFeatured.toString(),
+                          'user_id': userId.toString(),  // Send user_id as workaround
+                        },
+                      );
+                      
+                      if (context.mounted) {
+                        if (response['status'] == 'success') {
+                          // Show success dialog
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: const Text('Success!'),
+                                content: Text(response['message'] ?? 'Product saved successfully!'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context); // Close dialog
+                                      Navigator.pop(context); // Return to previous page
+                                    },
+                                    child: const Text('OK'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        } else {
+                          // Show error
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: ${response['message'] ?? 'Failed to save product'}'),
+                              backgroundColor: Colors.red,
                             ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context); // Close dialog
-                                Navigator.pop(context); // Return to home page
-                              },
-                              child: const Text('OK'),
-                            ),
-                          ],
                         );
-                      },
-                    );
+                      }
+                    }
                   }
                 },
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: RichText(
-        text: TextSpan(
-          style: const TextStyle(color: Colors.black87, fontSize: 14),
-          children: [
-            TextSpan(
-              text: '$label: ',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            TextSpan(text: value),
-          ],
         ),
       ),
     );
